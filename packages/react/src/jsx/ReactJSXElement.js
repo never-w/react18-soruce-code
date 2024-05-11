@@ -39,7 +39,7 @@ export function jsxDEV(type, config, maybekey) {
   }
 
   if (hasValidKey(config)) {
-    key = "" + config.value
+    key = "" + config.key
   }
   if (hasValidRef(config)) {
     ref = config.ref
