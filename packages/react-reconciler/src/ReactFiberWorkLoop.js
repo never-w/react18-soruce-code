@@ -34,5 +34,6 @@ function workLoopSync() {
 
 function performUnitOfWork(unitOfWork) {
   const current = unitOfWork.alternate
+  // TODO: 到这里了
   const next = beginWork(current, unitOfWork)
 }
