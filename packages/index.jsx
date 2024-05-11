@@ -1,1 +1,2 @@
-console.log("Hello React!")
+const element = <div>Hello</div>
+console.log(element)
