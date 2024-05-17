@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client"
 
 const root = createRoot(document.getElementById("root"))
+
 const element = (
   <div>
     <div>课程名称： 喜喜喜喜喜喜喜喜喜喜</div>
@@ -10,4 +11,5 @@ const element = (
     </div>
   </div>
 )
+
 root.render(element)
