@@ -1,5 +1,5 @@
-import { scheduleCallback } from "scheduler"
-import { createWorkInProgress } from "./ReactFiber"
+import { scheduleCallback } from 'scheduler'
+import { createWorkInProgress } from './ReactFiber'
 
 let workInProgress = null
 
@@ -34,6 +34,19 @@ function workLoopSync() {
 
 function performUnitOfWork(unitOfWork) {
   const current = unitOfWork.alternate
-  // TODO: 到这里了
   const next = beginWork(current, unitOfWork)
+  // 这里为什么将 pendingProps 赋值给 memoizedProps 因为，beginWork 里面处理过了 pendingProps
+  unitOfWork.memoizedProps = unitOfWork.pendingProps
+
+  // TODO: 临时写一个 null，因为还没具体实现逻辑，防止死循环
+  workInProgress = null
+  if (next === null) {
+    completeUnitOfWork(unitOfWork)
+  } else {
+    workInProgress = next
+  }
+}
+
+function completeUnitOfWork(unitOfWork) {
+  console.log(unitOfWork, 'completeUnitOfWork阶段')
 }

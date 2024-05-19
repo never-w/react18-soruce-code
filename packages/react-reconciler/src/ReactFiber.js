@@ -1,5 +1,5 @@
-import { HostRoot } from "./ReactWorkTags"
-import { NoFlags } from "./ReactFiberFlags"
+import { HostRoot } from './ReactWorkTags'
+import { NoFlags } from './ReactFiberFlags'
 
 /**
  * 构造函数，用于创建一个新的Fiber节点
@@ -33,7 +33,7 @@ export function createHostRootFiber() {
 }
 
 export function createWorkInProgress(current, pendingProps) {
-  const workInProgress = current.alternate
+  let workInProgress = current.alternate
   if (workInProgress === null) {
     workInProgress = createFiber(current.tag, pendingProps, current.key)
     workInProgress.type = current.type
