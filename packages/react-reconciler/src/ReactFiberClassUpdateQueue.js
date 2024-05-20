@@ -1,4 +1,4 @@
-import { HostRoot } from "./ReactWorkTags"
+import { HostRoot } from './ReactWorkTags'
 
 export function markUpdateLaneFromFiberToRoot(sourceFiber) {
   let node = sourceFiber
@@ -15,3 +15,24 @@ export function markUpdateLaneFromFiberToRoot(sourceFiber) {
   }
   return null
 }
+
+export function processUpdateQueue(workInProgress) {
+  const queue = workInProgress.updateQueue
+  const pendingQueue = queue.shared.pending
+  if (pendingQueue !== null) {
+    queue.shared.pending = null
+    const lastPendingUpdate = pendingQueue
+    const firstPendingUpdate = lastPendingUpdate.next
+
+    lastPendingUpdate.next = null
+    let newState = workInProgress.memoizedState
+    let update = firstPendingUpdate
+    while (update) {
+      newState = getStateFromUpdate(update, newState)
+      update = update.next
+    }
+    workInProgress.memoizedState = newState
+  }
+}
+
+function getStateFromUpdate(update, prevState) {}
