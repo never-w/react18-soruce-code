@@ -1,16 +1,13 @@
-import { HostComponent, HostRoot, HostText } from './ReactWorkTags'
-import { mountChildFibers, reconcileChildrenFibers } from './ReactChildFiber'
-import { processUpdateQueue } from './ReactFiberClassUpdateQueue'
+import { HostComponent, HostRoot, HostText } from "./ReactWorkTags"
+import { mountChildFibers, reconcileChildrenFibers } from "./ReactChildFiber"
+import { processUpdateQueue } from "./ReactFiberClassUpdateQueue"
+import { shouldSetTextContent } from "../../react-dom-binding/src/client/ReactDOMHostConfig"
 
 function reconcileChildren(current, workInProgress, nextChildren) {
   if (current === null) {
     workInProgress.child = mountChildFibers(workInProgress, null, nextChildren)
   } else {
-    workInProgress.child = reconcileChildrenFibers(
-      workInProgress,
-      current.child,
-      nextChildren,
-    )
+    workInProgress.child = reconcileChildrenFibers(workInProgress, current.child, nextChildren)
   }
 }
 
@@ -18,6 +15,18 @@ function updateHostRoot(current, workInProgress) {
   processUpdateQueue(workInProgress)
   const nextState = workInProgress.memoizedState
   const nextChildren = nextState.element
+  reconcileChildren(current, workInProgress, nextChildren)
+  return workInProgress.child
+}
+
+function updateHostComponent(current, workInProgress) {
+  const { type } = workInProgress
+  const nextProps = workInProgress.pendingProps
+  let nextChildren = nextProps.children
+  const isDirectTextChild = shouldSetTextContent(type, nextProps)
+  if (isDirectTextChild) {
+    nextChildren = null
+  }
   reconcileChildren(current, workInProgress, nextChildren)
   return workInProgress.child
 }

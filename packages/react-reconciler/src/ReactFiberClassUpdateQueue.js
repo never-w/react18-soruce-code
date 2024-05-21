@@ -1,4 +1,5 @@
-import { HostRoot } from './ReactWorkTags'
+import { HostRoot } from "./ReactWorkTags"
+import assign from "shared/assign"
 
 export function markUpdateLaneFromFiberToRoot(sourceFiber) {
   let node = sourceFiber
@@ -35,4 +36,7 @@ export function processUpdateQueue(workInProgress) {
   }
 }
 
-function getStateFromUpdate(update, prevState) {}
+function getStateFromUpdate(update, prevState) {
+  const { payload } = update
+  return assign({}, prevState, payload)
+}

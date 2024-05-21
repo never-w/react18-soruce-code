@@ -1,5 +1,5 @@
-import { HostRoot } from './ReactWorkTags'
-import { NoFlags } from './ReactFiberFlags'
+import { HostComponent, HostRoot, HostText, IndeterminateComponent } from "./ReactWorkTags"
+import { NoFlags } from "./ReactFiberFlags"
 
 /**
  * 构造函数，用于创建一个新的Fiber节点
@@ -53,4 +53,23 @@ export function createWorkInProgress(current, pendingProps) {
   workInProgress.sibling = current.sibling
   workInProgress.index = current.index
   return workInProgress
+}
+
+export function createFiberFromElement(element) {
+  const { type, key, props: pendingProps } = element
+  return createFiberFromTypeAndProps(type, key, pendingProps)
+}
+
+function createFiberFromTypeAndProps(type, key, pendingProps) {
+  let tag = IndeterminateComponent
+  if (typeof type === "string") {
+    tag = HostComponent
+  }
+  const fiber = createFiber(tag, pendingProps, key)
+  fiber.type = type
+  return fiber
+}
+
+export function createFiberFromText(content) {
+  return createFiber(HostText, content, null)
 }
