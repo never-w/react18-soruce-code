@@ -1,6 +1,7 @@
 import { scheduleCallback } from "scheduler"
 import { createWorkInProgress } from "./ReactFiber"
 import { beginWork } from "./ReactFiberBeginWork"
+import { completeWork } from "./ReactFiberCompleteWork"
 
 let workInProgress = null
 
@@ -39,14 +40,27 @@ function performUnitOfWork(unitOfWork) {
   // 这里为什么将 pendingProps 赋值给 memoizedProps 因为，beginWork 里面处理过了 pendingProps
   unitOfWork.memoizedProps = unitOfWork.pendingProps
 
-  workInProgress = null
-  // if (next === null) {
-  //   completeUnitOfWork(unitOfWork)
-  // } else {
-  //   workInProgress = next
-  // }
+  // workInProgress = null
+  if (next === null) {
+    completeUnitOfWork(unitOfWork)
+  } else {
+    workInProgress = next
+  }
 }
 
 function completeUnitOfWork(unitOfWork) {
-  console.log(unitOfWork, "completeUnitOfWork阶段")
+  let completedWork = unitOfWork
+  do {
+    const current = completedWork.alternate
+    const returnFiber = completedWork.return
+    completeWork(current, completedWork)
+    const siblingFiber = completedWork.sibling
+    if (siblingFiber !== null) {
+      workInProgress = siblingFiber
+      return
+    }
+    completedWork = returnFiber
+    // 这里这样赋值是还要去看有没有兄弟节点
+    workInProgress = completedWork
+  } while (completedWork !== null)
 }
