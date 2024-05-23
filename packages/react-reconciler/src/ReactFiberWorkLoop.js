@@ -27,7 +27,6 @@ function renderRootSync(root) {
 }
 
 function commitRoot(root) {
-  debugger
   const { finishedWork } = root
   const subtreeHasEffects = (finishedWork.subtreeFlags & MutationMask) !== NoFlags
   const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags
