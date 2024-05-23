@@ -1,5 +1,5 @@
 import { setValueForStyle } from "./CSSPropertyOperations"
-import setTextContent from "./setTextContent"
+import { setTextContent } from "./setTextContent"
 import { setValueForProperty } from "./DOMPropertyOperations"
 
 export function setInitialProperties(domElement, tag, props) {
