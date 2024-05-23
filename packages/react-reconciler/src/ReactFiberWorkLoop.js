@@ -2,6 +2,8 @@ import { scheduleCallback } from "scheduler"
 import { createWorkInProgress } from "./ReactFiber"
 import { beginWork } from "./ReactFiberBeginWork"
 import { completeWork } from "./ReactFiberCompleteWork"
+import { MutationMask, NoFlags } from "./ReactFiberFlags"
+import { commitMutationEffectsOnFiber } from "./ReactFiberCommitWork"
 
 let workInProgress = null
 
@@ -16,12 +18,22 @@ function ensureRootIsScheduled(root) {
 function performConcurrentWorkOnRoot(root) {
   renderRootSync(root)
   root.finishedWork = root.current.alternate
-  //   commitRoot(root)
+  commitRoot(root)
 }
 
 function renderRootSync(root) {
   prepareFreshStack(root)
   workLoopSync()
+}
+
+function commitRoot(root) {
+  const { finishedWork } = root
+  const subtreeHasEffects = (finishedWork.subtreeFlags & MutationMask) != NoFlags
+  const rootHasEffect = (finishedWork.flags & MutationMask) != NoFlags
+  if (subtreeHasEffects || rootHasEffect) {
+    commitMutationEffectsOnFiber(finishedWork, root)
+  }
+  root.current = finishedWork
 }
 
 function prepareFreshStack(root) {

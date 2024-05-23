@@ -1,7 +1,7 @@
 import { HostComponent, HostRoot, HostText } from "./ReactWorkTags"
 import { mountChildFibers, reconcileChildrenFibers } from "./ReactChildFiber"
 import { processUpdateQueue } from "./ReactFiberClassUpdateQueue"
-import { shouldSetTextContent } from "../../react-dom-binding/src/client/ReactDOMHostConfig"
+import { shouldSetTextContent } from "../../react-dom-bindings/src/client/ReactDOMHostConfig"
 
 function reconcileChildren(current, workInProgress, nextChildren) {
   if (current === null) {

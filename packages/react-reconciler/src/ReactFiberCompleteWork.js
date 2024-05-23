@@ -1,6 +1,6 @@
 import { NoFlags } from "./ReactFiberFlags"
 import { HostComponent, HostRoot, HostText } from "./ReactWorkTags"
-import { createTextInstance, createInstance, appendInitialChild, finalizeInitialChildren } from "react-dom-binding/src/client/ReactDOMHostConfig"
+import { createTextInstance, createInstance, appendInitialChild, finalizeInitialChildren } from "react-dom-bindings/src/client/ReactDOMHostConfig"
 
 function appendAllChildren(parent, workInProgress) {
   let node = workInProgress.child
@@ -27,7 +27,7 @@ function appendAllChildren(parent, workInProgress) {
   }
 }
 
-export function completedWork(current, workInProgress) {
+export function completeWork(current, workInProgress) {
   const newProps = workInProgress.pendingProps
   switch (workInProgress.tag) {
     case HostRoot:
