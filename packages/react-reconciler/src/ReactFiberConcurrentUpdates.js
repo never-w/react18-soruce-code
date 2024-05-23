@@ -1,29 +1,17 @@
-import { markUpdateLaneFromFiberToRoot } from "./ReactFiberClassUpdateQueue"
+import { HostRoot } from "./ReactWorkTags"
 
-export function initialUpdateQueue(fiber) {
-  const queue = {
-    shared: {
-      pending: null,
-    },
+export function markUpdateLaneFromFiberToRoot(sourceFiber) {
+  let node = sourceFiber
+  let parent = sourceFiber.return
+
+  while (parent !== null) {
+    node = parent
+    parent = parent.return
   }
 
-  fiber.updateQueue = queue
-}
-
-export function createUpdate() {
-  const update = {}
-  return update
-}
-
-export function enqueueUpdate(fiber, update) {
-  const updateQueue = fiber.updateQueue
-  const pending = updateQueue.shared.pending
-  if (pending === null) {
-    update.next = update
-  } else {
-    update.next = pending.next
-    pending.next = update
+  if (node.tag === HostRoot) {
+    // 返回整个应用程序的FiberRoot
+    return node.stateNode
   }
-  updateQueue.shared.pending = update
-  return markUpdateLaneFromFiberToRoot(fiber)
+  return null
 }

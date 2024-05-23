@@ -4,10 +4,13 @@ const root = createRoot(document.getElementById("root"))
 
 const element = (
   <div>
-    <div>课程名称： 喜喜喜喜喜喜喜喜喜喜</div>
-    <div>xx: 的说法是</div>
+    <div>课程名称：手写React高质量源码迈向高阶开发</div>
+    <div>讲师：杨艺韬</div>
     <div>
-      xx: <a href="cccccccccc"></a>
+      电子书：
+      <a style={{ color: "blue" }} href="https://www.yangyitao.com/react18">
+        https://www.yangyitao.com/react18
+      </a>
     </div>
   </div>
 )

@@ -52,7 +52,8 @@ export function completeWork(current, workInProgress) {
 function bubbleProperties(completedWork) {
   let subtreeFlags = NoFlags
   let child = completedWork.child
-  while (child) {
+
+  while (child !== null) {
     subtreeFlags |= child.subtreeFlags
     subtreeFlags |= child.flags
     child = child.sibling

@@ -76,10 +76,11 @@ function createChildReconciler(shouldTrackSideEffects) {
     if (isArray(newChild)) {
       return reconcileChildrenArray(returnFiber, currentFirstFiber, newChild)
     }
+    return null
   }
 
   return reconcileChildFibers
 }
 
+export const reconcileChildFibers = createChildReconciler(true)
 export const mountChildFibers = createChildReconciler(false)
-export const reconcileChildrenFibers = createChildReconciler(true)

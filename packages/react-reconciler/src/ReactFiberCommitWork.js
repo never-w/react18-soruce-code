@@ -5,7 +5,7 @@ import { appendInitialChild, insertBefore } from "react-dom-bindings/src/client/
 function recursivelyTraverseMutationEffects(root, parentFiber) {
   if (parentFiber.subtreeFlags & MutationMask) {
     let { child } = parentFiber
-    while (child) {
+    while (child !== null) {
       commitMutationEffectsOnFiber(child, root)
       child = child.sibling
     }
@@ -25,7 +25,7 @@ function isHostParent(fiber) {
 
 function getHostParentFiber(fiber) {
   let parent = fiber.return
-  while (parent) {
+  while (parent !== null) {
     if (isHostParent(parent)) {
       return parent
     }
@@ -69,10 +69,10 @@ function insertOrAppendPlacementNode(node, before, parent) {
     }
   } else {
     const { child } = node
-    if (child) {
+    if (child !== null) {
       insertOrAppendPlacementNode(child, before, parent)
       let { sibling } = child
-      while (sibling) {
+      while (sibling !== null) {
         insertOrAppendPlacementNode(sibling, before, parent)
         sibling = sibling.sibling
       }
@@ -100,11 +100,9 @@ function commitPlacement(finishedWork) {
 }
 
 export function commitMutationEffectsOnFiber(finishedWork, root) {
-  switch (finishedWork) {
+  switch (finishedWork.tag) {
     case HostRoot:
-      break
     case HostComponent:
-      break
     case HostText:
       recursivelyTraverseMutationEffects(root, finishedWork)
       commitReconciliationEffects(finishedWork)

@@ -1,13 +1,13 @@
 import { HostComponent, HostRoot, HostText } from "./ReactWorkTags"
-import { mountChildFibers, reconcileChildrenFibers } from "./ReactChildFiber"
+import { mountChildFibers, reconcileChildFibers } from "./ReactChildFiber"
 import { processUpdateQueue } from "./ReactFiberClassUpdateQueue"
-import { shouldSetTextContent } from "../../react-dom-bindings/src/client/ReactDOMHostConfig"
+import { shouldSetTextContent } from "react-dom-bindings/src/client/ReactDOMHostConfig"
 
 function reconcileChildren(current, workInProgress, nextChildren) {
   if (current === null) {
     workInProgress.child = mountChildFibers(workInProgress, null, nextChildren)
   } else {
-    workInProgress.child = reconcileChildrenFibers(workInProgress, current.child, nextChildren)
+    workInProgress.child = reconcileChildFibers(workInProgress, current.child, nextChildren)
   }
 }
 

@@ -13,6 +13,7 @@ export function FiberNode(tag, pendingProps, key) {
   this.type = null // 代表fiber节点对应虚拟DOM的类型
   this.stateNode = null
   this.return = null
+  this.child = null
   this.sibling = null
   this.pendingProps = pendingProps
   this.memoizedProps = null
@@ -39,6 +40,7 @@ export function createWorkInProgress(current, pendingProps) {
     workInProgress.type = current.type
     workInProgress.stateNode = current.stateNode
     workInProgress.alternate = current
+    current.alternate = workInProgress
   } else {
     workInProgress.pendingProps = pendingProps
     workInProgress.type = current.type

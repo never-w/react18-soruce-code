@@ -27,12 +27,15 @@ function renderRootSync(root) {
 }
 
 function commitRoot(root) {
+  debugger
   const { finishedWork } = root
-  const subtreeHasEffects = (finishedWork.subtreeFlags & MutationMask) != NoFlags
-  const rootHasEffect = (finishedWork.flags & MutationMask) != NoFlags
+  const subtreeHasEffects = (finishedWork.subtreeFlags & MutationMask) !== NoFlags
+  const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags
+
   if (subtreeHasEffects || rootHasEffect) {
     commitMutationEffectsOnFiber(finishedWork, root)
   }
+
   root.current = finishedWork
 }
 

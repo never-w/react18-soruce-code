@@ -1,5 +1,5 @@
+import { createUpdate, enqueueUpdate } from "./ReactFiberClassUpdateQueue"
 import { createFiberRoot } from "./ReactFiberRoot"
-import { createUpdate, enqueueUpdate } from "./ReactFiberConcurrentUpdates"
 import { scheduleUpdateOnFiber } from "./ReactFiberWorkLoop"
 
 export function createContainer(containerInfo) {
