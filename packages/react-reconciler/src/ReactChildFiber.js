@@ -79,10 +79,25 @@ function createChildReconciler(shouldTrackSideEffects) {
     return created
   }
 
-  function placeChild(newFiber, newIdx) {
+  function placeChild(newFiber, lastPlacedIndex, newIdx) {
     newFiber.index = newIdx
-    if (shouldTrackSideEffects) {
+    if (!shouldTrackSideEffects) return lastPlacedIndex
+    const current = newFiber.alternate
+
+    // 复用老fiber
+    if (current !== null) {
+      const oldIndex = current.index
       newFiber.flags |= Placement
+      if (oldIndex < lastPlacedIndex) {
+        newFiber.flags |= Placement
+        return lastPlacedIndex
+      } else {
+        return oldIndex
+      }
+    } else {
+      // 不是复用老fiber
+      newFiber.flags |= Placement
+      return lastPlacedIndex
     }
   }
 
@@ -154,12 +169,89 @@ function createChildReconciler(shouldTrackSideEffects) {
     return null
   }
 
+  /**
+   * 将剩余的子节点映射到一个Map对象中
+   * @param {Object|null} returnFiber 父级fiber节点
+   * @param {Object|null} existingChildren 已经存在的子节点
+   * @return {Map|null} 返回一个Map对象，键是子节点的key，值是子节点的fiber节点
+   */
+  function mapRemainingChildren(returnFiber, currentFirstChild) {
+    const existingChildren = new Map()
+
+    let existingChild = currentFirstChild
+    while (existingChild !== null) {
+      if (existingChild.key !== null) {
+        existingChildren.set(existingChild.key, existingChild)
+      } else {
+        existingChildren.set(existingChild.index, existingChild)
+      }
+      existingChild = existingChild.sibling
+    }
+
+    return existingChildren
+  }
+
+  /**
+   * 如果当前节点是文本节点则复用，否则创建新的文本节点。
+   * @param {Fiber} returnFiber - 父级Fiber节点
+   * @param {Fiber} current - 当前处理的Fiber节点
+   * @param {string} textContent - 文本内容
+   * @returns {Fiber} 新的或者复用的文本节点
+   */
+  function updateTextNode(returnFiber, current, textContent) {
+    if (current === null || current.tag !== HostText) {
+      const created = createFiberFromText(textContent)
+      created.return = returnFiber
+      return created
+    } else {
+      const existing = useFiber(current, textContent)
+      existing.return = returnFiber
+      return existing
+    }
+  }
+
+  /**
+   * 从现有的子节点映射中更新Fiber节点
+   * @param {Map} existingChildren - 现有的子节点映射
+   * @param {Fiber} returnFiber - 父级Fiber节点
+   * @param {number} newIdx - 新节点的索引
+   * @param {any} newChild - 新的子节点
+   * @returns {Fiber} 更新后的Fiber节点
+   */
+  function updateFromMap(existingChildren, returnFiber, newIdx, newChild) {
+    if (
+      (typeof newChild === 'string' && newChild !== '') ||
+      typeof newChild === 'number'
+    ) {
+      const matchedFiber = existingChildren.get(newIdx) || null
+      return updateTextNode(returnFiber, matchedFiber, '' + newChild)
+    }
+    if (typeof newChild === 'object' && newChild !== null) {
+      switch (newChild.$$typeof) {
+        case REACT_ELEMENT_TYPE: {
+          const matchedFiber =
+            existingChildren.get(newChild.key === null ? newIdx : newChild.key) || null
+          return updateElement(returnFiber, matchedFiber, newChild)
+        }
+      }
+    }
+  }
+
+  /**
+   * 将新的子节点数组与旧的子Fiber进行比较，并返回新的子Fiber
+   *
+   * @param {Fiber} returnFiber - 新的父Fiber
+   * @param {Fiber} currentFirstChild - 老fiber第一个子fiber
+   * @param {Array} newChildren - 新的子节点数组
+   * @return {Fiber} resultingFirstChild - 返回的新的子Fiber
+   */
   function reconcileChildrenArray(returnFiber, currentFirstChild, newChildren) {
     let resultingFirstChild = null
     let previousNewFiber = null
     let newIdx = 0
     let oldFiber = currentFirstChild
     let nextOldFiber = null
+    let lastPlacedIndex = 0
 
     // 数组新虚拟DOM 第一套方案
     for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {
@@ -173,7 +265,9 @@ function createChildReconciler(shouldTrackSideEffects) {
           deleteChild(returnFiber, oldFiber)
         }
       }
-      // lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx)
+
+      lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx)
+
       if (previousNewFiber === null) {
         resultingFirstChild = newFiber
       } else {
@@ -188,8 +282,7 @@ function createChildReconciler(shouldTrackSideEffects) {
       for (; newIdx < newChildren.length; newIdx++) {
         const newFiber = createChild(returnFiber, newChildren[newIdx])
         if (newFiber === null) continue
-
-        placeChild(newFiber, newIdx)
+        placeChild(newFiber, lastPlacedIndex, newIdx)
         if (previousNewFiber === null) {
           resultingFirstChild = newFiber
         } else {
@@ -200,6 +293,33 @@ function createChildReconciler(shouldTrackSideEffects) {
     }
 
     // 数组新虚拟DOM 第三套方案
+    // https://vue3js.cn/interview/React/diff.html#%E4%BA%8C%E3%80%81%E5%8E%9F%E7%90%86
+    const existingChildren = mapRemainingChildren(returnFiber, oldFiber)
+    for (; newIdx < newChildren.length; newIdx++) {
+      const newFiber = updateFromMap(
+        existingChildren,
+        returnFiber,
+        newIdx,
+        newChildren[newIdx],
+      )
+      if (newFiber !== null) {
+        if (shouldTrackSideEffects) {
+          if (newFiber.alternate !== null) {
+            existingChildren.delete(newFiber.key === null ? newIdx : newFiber.key)
+          }
+        }
+      }
+
+      lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx)
+
+      if (previousNewFiber === null) {
+        resultingFirstChild = newFiber
+      } else {
+        previousNewFiber.sibling = newFiber
+      }
+      previousNewFiber = newFiber
+    }
+
     return resultingFirstChild
   }
 
