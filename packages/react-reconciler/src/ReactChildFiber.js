@@ -184,17 +184,19 @@ function createChildReconciler(shouldTrackSideEffects) {
     }
 
     // 数组新虚拟DOM 第二套方案
-    for (; newIdx < newChildren.length; newIdx++) {
-      const newFiber = createChild(returnFiber, newChildren[newIdx])
-      if (newFiber === null) continue
+    if (oldFiber === null) {
+      for (; newIdx < newChildren.length; newIdx++) {
+        const newFiber = createChild(returnFiber, newChildren[newIdx])
+        if (newFiber === null) continue
 
-      placeChild(newFiber, newIdx)
-      if (previousNewFiber === null) {
-        resultingFirstChild = newFiber
-      } else {
-        previousNewFiber.sibling = newFiber
+        placeChild(newFiber, newIdx)
+        if (previousNewFiber === null) {
+          resultingFirstChild = newFiber
+        } else {
+          previousNewFiber.sibling = newFiber
+        }
+        previousNewFiber = newFiber
       }
-      previousNewFiber = newFiber
     }
 
     // 数组新虚拟DOM 第三套方案
