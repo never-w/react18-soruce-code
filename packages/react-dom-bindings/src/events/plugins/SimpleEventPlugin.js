@@ -1,5 +1,7 @@
 import { registerSimpleEvents, topLevelEventsToReactNames } from '../DOMEventProperties'
 import { IS_CAPTURE_PHASE } from '../EventSystemFlags'
+import { SyntheticMouseEvent } from '../SyntheticEvent'
+import { accumulateSinglePhaseListener } from '../DOMPluginEventSystem'
 
 function extractEvents(
   dispatchQueue,

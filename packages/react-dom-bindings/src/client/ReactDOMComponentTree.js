@@ -14,3 +14,7 @@ export function getClosestInstanceFromNode(targetNode) {
   const targetInst = targetNode[internalInstanceKey]
   return targetInst
 }
+
+export function getFiberCurrentPropsFromNode(node) {
+  return node[internalPropsKey] || null
+}

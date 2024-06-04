@@ -4,10 +4,13 @@ import { IS_CAPTURE_PHASE } from './EventSystemFlags'
 import { createEventListenerWrapperWithPriority } from './ReactDOMEventListener'
 import { addEventCaptureListener, addEventBubbleListener } from './EventListener'
 import getEventTarget from './getEventTarget'
+import { HostComponent } from 'react-reconciler/src/ReactWorkTags'
+import getListener from './getListener'
 
 SimpleEventPlugin.registerEvents()
 const listeningMarker = `_reactListening${Math.random().toString(36).slice(2)}`
 
+// 合成事件的入口函数
 export function listenToAllSupportedEvents(rootContainerElement) {
   if (!rootContainerElement[listeningMarker]) {
     allNativeEvents.forEach((domEventName) => {
@@ -51,7 +54,7 @@ export function dispatchEventForPluginEventSystem(
   targetInst,
   targetContainer,
 ) {
-  dispatchEventForPluginEventSystem(
+  dispatchEventForPlugins(
     domEventName,
     eventSystemFlags,
     nativeEvent,
@@ -60,7 +63,36 @@ export function dispatchEventForPluginEventSystem(
   )
 }
 
-function dispatchEventForPluginEventSystem(
+export function accumulateSinglePhaseListener(
+  targetFiber,
+  reactName,
+  nativeEventType,
+  isCapturePhase,
+) {
+  const captureName = reactName + 'Capture'
+  const reactEventName = isCapturePhase ? captureName : reactName
+
+  const listeners = []
+  let instance = targetFiber
+  while (instance !== null) {
+    const { stateNode, tag } = instance
+    if (tag === HostComponent && stateNode) {
+      const listener = getListener(instance, reactEventName)
+      if (listener) {
+        listeners.push(createDispatchListener(instance, listener, stateNode))
+      }
+    }
+    instance = instance.return
+  }
+
+  return listeners
+}
+
+function createDispatchListener(instance, listener, currentTarget) {
+  return { instance, listener, currentTarget }
+}
+
+function dispatchEventForPlugins(
   domEventName,
   eventSystemFlags,
   nativeEvent,
@@ -101,4 +133,31 @@ function extractEvents(
   )
 }
 
-function processDispatchQueue(dispatchQueue, eventSystemFlags) {}
+function processDispatchQueue(dispatchQueue, eventSystemFlags) {
+  const isCapturePhase = (eventSystemFlags & IS_CAPTURE_PHASE) !== 0
+  for (let i = 0; i < dispatchQueue.length; i++) {
+    const { event, listeners } = dispatchQueue[i]
+    processDispatchQueueItemsInOrder(event, listeners, isCapturePhase)
+  }
+}
+
+function processDispatchQueueItemsInOrder(event, dispatchListeners, isCapturePhase) {
+  if (isCapturePhase) {
+    for (let i = dispatchListeners.length - 1; i >= 0; i--) {
+      const { listener, currentTarget } = dispatchListeners[i]
+      if (event.isPropagationStopped()) return
+      executeDispatch(event, listener, currentTarget)
+    }
+  } else {
+    for (let i = 0; i < dispatchListeners.length; i++) {
+      const { listener, currentTarget } = dispatchListeners[i]
+      if (event.isPropagationStopped()) return
+      executeDispatch(event, listener, currentTarget)
+    }
+  }
+}
+
+function executeDispatch(event, listener, currentTarget) {
+  event.currentTarget = currentTarget
+  listener(event)
+}
