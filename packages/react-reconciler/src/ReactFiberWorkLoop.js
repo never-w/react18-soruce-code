@@ -1,9 +1,10 @@
-import { scheduleCallback } from "scheduler"
-import { createWorkInProgress } from "./ReactFiber"
-import { beginWork } from "./ReactFiberBeginWork"
-import { completeWork } from "./ReactFiberCompleteWork"
-import { MutationMask, NoFlags } from "./ReactFiberFlags"
-import { commitMutationEffectsOnFiber } from "./ReactFiberCommitWork"
+import { scheduleCallback } from 'scheduler'
+import { createWorkInProgress } from './ReactFiber'
+import { beginWork } from './ReactFiberBeginWork'
+import { completeWork } from './ReactFiberCompleteWork'
+import { MutationMask, NoFlags } from './ReactFiberFlags'
+import { commitMutationEffectsOnFiber } from './ReactFiberCommitWork'
+import { finishQueueingConcurrentUpdates } from './ReactFiberConcurrentUpdates'
 
 let workInProgress = null
 
@@ -40,6 +41,7 @@ function commitRoot(root) {
 
 function prepareFreshStack(root) {
   workInProgress = createWorkInProgress(root.current, null)
+  finishQueueingConcurrentUpdates()
 }
 
 function workLoopSync() {
