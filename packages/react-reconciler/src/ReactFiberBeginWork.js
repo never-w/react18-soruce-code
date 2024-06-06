@@ -1,14 +1,24 @@
-import { FunctionComponent, HostComponent, HostRoot, HostText, IndeterminateComponent } from "./ReactWorkTags"
-import { mountChildFibers, reconcileChildFibers } from "./ReactChildFiber"
-import { processUpdateQueue } from "./ReactFiberClassUpdateQueue"
-import { shouldSetTextContent } from "react-dom-bindings/src/client/ReactDOMHostConfig"
-import { renderWithHooks } from "react-reconciler/src/ReactFiberHooks"
+import {
+  FunctionComponent,
+  HostComponent,
+  HostRoot,
+  HostText,
+  IndeterminateComponent,
+} from './ReactWorkTags'
+import { mountChildFibers, reconcileChildFibers } from './ReactChildFiber'
+import { processUpdateQueue } from './ReactFiberClassUpdateQueue'
+import { shouldSetTextContent } from 'react-dom-bindings/src/client/ReactDOMHostConfig'
+import { renderWithHooks } from 'react-reconciler/src/ReactFiberHooks'
 
 function reconcileChildren(current, workInProgress, nextChildren) {
   if (current === null) {
     workInProgress.child = mountChildFibers(workInProgress, null, nextChildren)
   } else {
-    workInProgress.child = reconcileChildFibers(workInProgress, current.child, nextChildren)
+    workInProgress.child = reconcileChildFibers(
+      workInProgress,
+      current.child,
+      nextChildren,
+    )
   }
 }
 
@@ -40,6 +50,12 @@ function mountIndeterminateComponent(current, workInProgress, Component) {
   return workInProgress.child
 }
 
+export function updateFunctionComponent(current, workInProgress, Component, nextProps) {
+  const nextChildren = renderWithHooks(current, workInProgress, Component, nextProps)
+  reconcileChildren(current, workInProgress, nextChildren)
+  return workInProgress.child
+}
+
 export function beginWork(current, workInProgress) {
   switch (workInProgress.tag) {
     case IndeterminateComponent:
@@ -48,6 +64,10 @@ export function beginWork(current, workInProgress) {
       return updateHostRoot(current, workInProgress)
     case HostComponent:
       return updateHostComponent(current, workInProgress)
+    case FunctionComponent:
+      const Component = workInProgress.type
+      const nextProps = workInProgress.pendingProps
+      return updateFunctionComponent(current, workInProgress, Component, nextProps)
     case HostText:
       return null
     default:

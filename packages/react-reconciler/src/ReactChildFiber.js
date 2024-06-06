@@ -6,6 +6,7 @@ import {
 } from './ReactFiber'
 import { Placement, ChildDeletion } from './ReactFiberFlags'
 import isArray from 'shared/isArray'
+import { HostText } from './ReactWorkTags'
 
 function createChildReconciler(shouldTrackSideEffects) {
   /**

@@ -5,6 +5,7 @@ import { enqueueConcurrentHookUpdate } from './ReactFiberConcurrentUpdates'
 const { ReactCurrentDispatcher } = ReactSharedInternals
 let currentlyRenderingFiber = null
 let workInProgressHook = null
+let currentHook = null
 const HooksDispatcherOnMount = {
   useReducer: mountReducer,
 }
@@ -19,11 +20,35 @@ function mountReducer(reducer, initialArg) {
     pending: null,
   }
   hook.queue = queue
-  const dispatch = dispatchReducerAction.bind(null, currentlyRenderingFiber, queue)
+  const dispatch = (queue.dispatch = dispatchReducerAction.bind(
+    null,
+    currentlyRenderingFiber,
+    queue,
+  ))
   return [hook.memoizedState, dispatch]
 }
 
-function updateReducer(reducer) {}
+function updateReducer(reducer) {
+  const hook = updateWorkInProgressHook()
+  const queue = hook.queue
+  const current = currentHook
+  const pendingQueue = queue.pending
+  let newState = current.memoizedState
+
+  if (pendingQueue !== null) {
+    queue.pending = null
+    const firstUpdate = pendingQueue.next
+    let update = firstUpdate
+    do {
+      const action = update.action
+      newState = reducer(newState, action)
+      update = update.next
+    } while (update !== null && update !== firstUpdate)
+  }
+
+  hook.memoizedState = newState
+  return [hook.memoizedState, queue.dispatch]
+}
 
 function dispatchReducerAction(fiber, queue, action) {
   const update = {
@@ -50,6 +75,29 @@ function mountWorkInProgressHook() {
   return workInProgressHook
 }
 
+function updateWorkInProgressHook() {
+  if (currentHook === null) {
+    const current = currentlyRenderingFiber.alternate
+    currentHook = current.memoizedState
+  } else {
+    currentHook = currentHook.next
+  }
+
+  const newHook = {
+    memoizedState: currentHook.memoizedState,
+    queue: currentHook.queue,
+    next: null,
+  }
+
+  if (workInProgressHook === null) {
+    currentlyRenderingFiber.memoizedState = workInProgressHook = newHook
+  } else {
+    workInProgressHook = workInProgressHook.next = newHook
+  }
+
+  return workInProgressHook
+}
+
 export function renderWithHooks(current, workInProgress, Component, props) {
   currentlyRenderingFiber = workInProgress
   if (current !== null && current.memoizedState !== null) {
@@ -60,5 +108,6 @@ export function renderWithHooks(current, workInProgress, Component, props) {
   const children = Component(props)
   currentlyRenderingFiber = null
   workInProgressHook = null
+  currentHook = null
   return children
 }

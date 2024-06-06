@@ -1,6 +1,10 @@
-import { MutationMask, Placement } from "./ReactFiberFlags"
-import { FunctionComponent, HostComponent, HostRoot, HostText } from "./ReactWorkTags"
-import { appendInitialChild, insertBefore } from "react-dom-bindings/src/client/ReactDOMHostConfig"
+import { MutationMask, Placement, Update } from './ReactFiberFlags'
+import { FunctionComponent, HostComponent, HostRoot, HostText } from './ReactWorkTags'
+import {
+  appendInitialChild,
+  insertBefore,
+  commitUpdate,
+} from 'react-dom-bindings/src/client/ReactDOMHostConfig'
 
 function recursivelyTraverseMutationEffects(root, parentFiber) {
   if (parentFiber.subtreeFlags & MutationMask) {
@@ -81,10 +85,10 @@ function insertOrAppendPlacementNode(node, before, parent) {
 }
 
 function commitPlacement(finishedWork) {
-  const parenFiber = getHostParentFiber(finishedWork)
-  switch (parenFiber.tag) {
+  const parentFiber = getHostParentFiber(finishedWork)
+  switch (parentFiber.tag) {
     case HostRoot: {
-      const parent = parenFiber.stateNode.containerInfo
+      const parent = parentFiber.stateNode.containerInfo
       const before = getHostSibling(finishedWork)
       insertOrAppendPlacementNode(finishedWork, before, parent)
       break
@@ -100,13 +104,33 @@ function commitPlacement(finishedWork) {
 }
 
 export function commitMutationEffectsOnFiber(finishedWork, root) {
+  const flags = finishedWork.flags
+  const current = finishedWork.alternate
+
   switch (finishedWork.tag) {
     case FunctionComponent:
     case HostRoot:
-    case HostComponent:
-    case HostText:
+    case HostText: {
       recursivelyTraverseMutationEffects(root, finishedWork)
       commitReconciliationEffects(finishedWork)
       break
+    }
+    case HostComponent: {
+      recursivelyTraverseMutationEffects(root, finishedWork)
+      commitReconciliationEffects(finishedWork)
+      if (flags & Update) {
+        const instance = finishedWork.stateNode
+        if (instance !== null) {
+          const newProps = finishedWork.memoizedProps
+          const oldProps = current !== null ? current.memoizedProps : newProps
+          const type = finishedWork.type
+          const updatePayload = finishedWork.updateQueue
+          finishedWork.updateQueue = null
+          if (updatePayload) {
+            commitUpdate(instance, updatePayload, type, oldProps, newProps, finishedWork)
+          }
+        }
+      }
+    }
   }
 }

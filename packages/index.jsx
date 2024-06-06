@@ -17,9 +17,8 @@ function MyFunctionComponent() {
     <button
       onClick={() => {
         setAge({ type: 'add', value: 1 })
-        setAge({ type: 'add', value: 1 })
       }}>
-      +age:{number}
+      {number}
     </button>
   )
 }
