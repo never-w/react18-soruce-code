@@ -1,16 +1,70 @@
 import ReactSharedInternals from 'shared/ReactSharedInternals'
 import { scheduleUpdateOnFiber } from './ReactFiberWorkLoop'
+import { Passive as PassiveEffect } from './ReactFiberFlags'
+import { HasEffect as HookHasEffect, Passive as HookPassive } from './ReactHookEffectTags'
 import { enqueueConcurrentHookUpdate } from './ReactFiberConcurrentUpdates'
 
+let currentHook = null
+
 const { ReactCurrentDispatcher } = ReactSharedInternals
+
 let currentlyRenderingFiber = null
 let workInProgressHook = null
-let currentHook = null
+
 const HooksDispatcherOnMount = {
   useReducer: mountReducer,
+  useState: mountState,
+  useEffect: mountEffect,
 }
 const HooksDispatcherOnUpdate = {
   useReducer: updateReducer,
+  useState: updateState,
+  useEffect: updateEffect,
+}
+
+function mountEffect(create, deps) {
+  return mountEffectImpl(PassiveEffect, HookPassive, create, deps)
+}
+
+function mountEffectImpl(fiberFlags, hookFlags, create, deps) {
+  const hook = mountWorkInProgressHook()
+  const nextDeps = deps === undefined ? null : deps
+  currentlyRenderingFiber.flags |= fiberFlags
+  hook.memoizedState = pushEffect(HookHasEffect | hookFlags, create, undefined, nextDeps)
+}
+
+function pushEffect(tag, create, destroy, deps) {
+  const effect = {
+    tag,
+    create,
+    destroy,
+    deps,
+    next: null,
+  }
+  let componentUpdateQueue = currentlyRenderingFiber.updateQueue
+  if (componentUpdateQueue === null) {
+    componentUpdateQueue = createFunctionComponentUpdateQueue()
+    currentlyRenderingFiber.updateQueue = componentUpdateQueue
+    componentUpdateQueue.lastEffect = effect.next = effect
+  } else {
+    const lastEffect = componentUpdateQueue.lastEffect
+    if (lastEffect === null) {
+      componentUpdateQueue.lastEffect = effect.next = effect
+    } else {
+      const firstEffect = lastEffect.next
+      lastEffect.next = effect
+      effect.next = firstEffect
+      componentUpdateQueue.lastEffect = effect
+    }
+  }
+
+  return effect
+}
+
+function createFunctionComponentUpdateQueue() {
+  return {
+    lastEffect: null,
+  }
 }
 
 function mountReducer(reducer, initialArg) {
@@ -25,7 +79,51 @@ function mountReducer(reducer, initialArg) {
     currentlyRenderingFiber,
     queue,
   ))
+
   return [hook.memoizedState, dispatch]
+}
+
+function baseStateReducer(state, action) {
+  return typeof action === 'function' ? action(state) : action
+}
+
+function mountState(initialState) {
+  const hook = mountWorkInProgressHook()
+  hook.memoizedState = initialState
+  const queue = {
+    pending: null,
+    dispatch: null,
+    lastRenderedReducer: baseStateReducer,
+    lastRenderedState: initialState,
+  }
+  hook.queue = queue
+  const dispatch = (queue.dispatch = dispatchSetStateAction.bind(
+    null,
+    currentlyRenderingFiber,
+    queue,
+  ))
+
+  return [hook.memoizedState, dispatch]
+}
+
+function dispatchSetStateAction(fiber, queue, action) {
+  const update = {
+    action,
+    hasEagerState: false,
+    eagerState: null,
+    next: null,
+  }
+  const { lastRenderedReducer, lastRenderedState } = queue
+  const eagerState = lastRenderedReducer(lastRenderedState, action)
+  update.eagerState = eagerState
+  update.hasEagerState = true
+  if (Object.is(eagerState, lastRenderedState)) return
+  const root = enqueueConcurrentHookUpdate(fiber, queue, update)
+  scheduleUpdateOnFiber(root)
+}
+
+function updateState() {
+  return updateReducer(baseStateReducer)
 }
 
 function updateReducer(reducer) {
