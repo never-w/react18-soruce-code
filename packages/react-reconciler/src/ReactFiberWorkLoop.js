@@ -7,6 +7,7 @@ import {
   commitMutationEffectsOnFiber,
   commitPassiveUnmountEffects,
   commitPassiveMountEffects,
+  commitLayoutEffects,
 } from './ReactFiberCommitWork'
 import { finishQueueingConcurrentUpdates } from './ReactFiberConcurrentUpdates'
 
@@ -48,6 +49,7 @@ function commitRoot(root) {
 
   if (subtreeHasEffects || rootHasEffect) {
     commitMutationEffectsOnFiber(finishedWork, root)
+    commitLayoutEffects(finishedWork, root)
     if (rootDoseHavePassiveEffect) {
       rootDoseHavePassiveEffect = false
       rootWithPendingPassiveEffects = root

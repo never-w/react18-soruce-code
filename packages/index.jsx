@@ -14,7 +14,7 @@ function MyFunctionComponent() {
   // const [number, setAge] = React.useReducer(getAge, 0)
   const [number, setAge] = React.useState(0)
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     console.log(number)
     return () => {
       console.log('456')

@@ -1,7 +1,11 @@
 import ReactSharedInternals from 'shared/ReactSharedInternals'
 import { scheduleUpdateOnFiber } from './ReactFiberWorkLoop'
-import { Passive as PassiveEffect } from './ReactFiberFlags'
-import { HasEffect as HookHasEffect, Passive as HookPassive } from './ReactHookEffectTags'
+import { Passive as PassiveEffect, Update as UpdateEffect } from './ReactFiberFlags'
+import {
+  HasEffect as HookHasEffect,
+  Passive as HookPassive,
+  Layout as HookLayout,
+} from './ReactHookEffectTags'
 import { enqueueConcurrentHookUpdate } from './ReactFiberConcurrentUpdates'
 
 let currentHook = null
@@ -15,11 +19,17 @@ const HooksDispatcherOnMount = {
   useReducer: mountReducer,
   useState: mountState,
   useEffect: mountEffect,
+  useLayoutEffect: mountLayoutEffect,
 }
 const HooksDispatcherOnUpdate = {
   useReducer: updateReducer,
   useState: updateState,
   useEffect: updateEffect,
+  useLayoutEffect: updateLayoutEffect,
+}
+
+function mountLayoutEffect(create, deps) {
+  return mountEffectImpl(UpdateEffect, HookLayout, create, deps)
 }
 
 function mountEffect(create, deps) {
@@ -124,6 +134,10 @@ function dispatchSetStateAction(fiber, queue, action) {
 
 function updateState() {
   return updateReducer(baseStateReducer)
+}
+
+function updateLayoutEffect(create, deps) {
+  return updateEffectImpl(UpdateEffect, HookLayout, create, deps)
 }
 
 function updateEffect(create, deps) {

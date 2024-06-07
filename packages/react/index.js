@@ -1,4 +1,5 @@
 export {
+  useLayoutEffect,
   useEffect,
   useState,
   useReducer,
