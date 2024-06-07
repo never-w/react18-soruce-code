@@ -126,6 +126,38 @@ function updateState() {
   return updateReducer(baseStateReducer)
 }
 
+function updateEffect(create, deps) {
+  return updateEffectImpl(PassiveEffect, HookPassive, create, deps)
+}
+
+function updateEffectImpl(fiberFlags, hookFlags, create, deps) {
+  const hook = updateWorkInProgressHook()
+  const nextDeps = deps === undefined ? null : deps
+  let destroy
+  if (currentHook !== null) {
+    const prevEffect = currentHook.memoizedState
+    destroy = prevEffect.destroy
+    if (nextDeps !== null) {
+      const prevDeps = prevEffect.deps
+      if (areHookInputsEqual(nextDeps, prevDeps)) {
+        hook.memoizedState = pushEffect(hookFlags, create, destroy, nextDeps)
+        return
+      }
+    }
+  }
+  currentlyRenderingFiber.flags |= fiberFlags
+  hook.memoizedState = pushEffect(HookHasEffect | hookFlags, create, destroy, nextDeps)
+}
+
+function areHookInputsEqual(nextDeps, prevDeps) {
+  if (prevDeps === null) return null
+  for (let i = 0; i < prevDeps.length && i < nextDeps.length; i++) {
+    if (Object.is(nextDeps[i], prevDeps[i])) continue
+    return false
+  }
+  return true
+}
+
 function updateReducer(reducer) {
   const hook = updateWorkInProgressHook()
   const queue = hook.queue
@@ -198,6 +230,7 @@ function updateWorkInProgressHook() {
 
 export function renderWithHooks(current, workInProgress, Component, props) {
   currentlyRenderingFiber = workInProgress
+  workInProgress.updateQueue = null
   if (current !== null && current.memoizedState !== null) {
     ReactCurrentDispatcher.current = HooksDispatcherOnUpdate
   } else {
